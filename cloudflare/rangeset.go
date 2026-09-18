@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrEmptyRangeSet = errors.New("CIDR 集合为空")
-	ErrInvalidPrefix = errors.New("无效的 IP 前缀")
+	ErrEmptyRangeSet    = errors.New("CIDR 集合为空")
+	ErrInvalidPrefix    = errors.New("无效的 IP 前缀")
+	ErrIPv4MappedPrefix = errors.New("不允许 IPv4-mapped IPv6 前缀")
 )
 
 // RangeSet 是规范化后不可变的 IP 前缀快照。
@@ -30,6 +31,9 @@ func NewRangeSet(prefixes []netip.Prefix, updatedAt time.Time) (*RangeSet, error
 	for i, prefix := range prefixes {
 		if !prefix.IsValid() {
 			return nil, ErrInvalidPrefix
+		}
+		if prefix.Addr().Is4In6() {
+			return nil, ErrIPv4MappedPrefix
 		}
 		normalized[i] = prefix.Masked()
 	}

@@ -58,4 +58,7 @@ func TestNewRangeSetRejectsEmptyAndInvalid(t *testing.T) {
 	if _, err := NewRangeSet([]netip.Prefix{{}}, time.Time{}); err != ErrInvalidPrefix {
 		t.Fatalf("非法前缀 error = %v, want %v", err, ErrInvalidPrefix)
 	}
+	if _, err := NewRangeSet([]netip.Prefix{netip.MustParsePrefix("::ffff:192.0.2.0/120")}, time.Time{}); err != ErrIPv4MappedPrefix {
+		t.Fatalf("IPv4-mapped IPv6 前缀 error = %v, want %v", err, ErrIPv4MappedPrefix)
+	}
 }
