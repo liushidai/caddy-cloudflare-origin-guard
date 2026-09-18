@@ -194,6 +194,25 @@ func TestOriginMatcherRemoteAddressOnly(t *testing.T) {
 	}
 }
 
+func TestOriginMatcherSecurityRegression(t *testing.T) {
+	t.Parallel()
+	matcher := &OriginMatcher{app: &App{store: testSnapshotStore(t)}}
+
+	attacker := httptest.NewRequest(http.MethodGet, "http://example.test/", nil)
+	attacker.RemoteAddr = "198.51.100.10:443"
+	attacker.Header.Set("CF-Connecting-IP", "192.0.2.10")
+	attacker.Header.Set("X-Forwarded-For", "192.0.2.10")
+	if got, err := matcher.MatchWithError(attacker); err != nil || got {
+		t.Fatalf("攻击者伪造头 MatchWithError() = %v, %v; want false, nil", got, err)
+	}
+
+	cloudflarePeer := httptest.NewRequest(http.MethodGet, "http://example.test/", nil)
+	cloudflarePeer.RemoteAddr = "192.0.2.10:443"
+	if got, err := matcher.MatchWithError(cloudflarePeer); err != nil || !got {
+		t.Fatalf("可信 peer 无头 MatchWithError() = %v, %v; want true, nil", got, err)
+	}
+}
+
 func TestIPRangeSourceSnapshotCache(t *testing.T) {
 	app := &App{store: testSnapshotStore(t)}
 	source := &IPRangeSource{app: app}

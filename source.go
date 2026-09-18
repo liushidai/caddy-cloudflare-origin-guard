@@ -27,11 +27,11 @@ type cachedRanges struct {
 type cloudflareRangeSet = cloudflare.RangeSet
 
 func init() {
-	caddy.RegisterModule(IPRangeSource{})
+	caddy.RegisterModule(&IPRangeSource{})
 }
 
 // CaddyModule returns the IP source module information.
-func (IPRangeSource) CaddyModule() caddy.ModuleInfo {
+func (*IPRangeSource) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "http.ip_sources.cloudflare",
 		New: func() caddy.Module { return new(IPRangeSource) },

@@ -48,11 +48,11 @@ type App struct {
 }
 
 func init() {
-	caddy.RegisterModule(App{})
+	caddy.RegisterModule(&App{})
 }
 
 // CaddyModule returns the app module information.
-func (App) CaddyModule() caddy.ModuleInfo {
+func (*App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  appID,
 		New: func() caddy.Module { return new(App) },
