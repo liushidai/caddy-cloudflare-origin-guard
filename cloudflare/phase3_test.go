@@ -15,25 +15,17 @@ import (
 )
 
 type stubFetcher struct {
-	mu     sync.Mutex
-	raw    RawRanges
-	err    error
-	calls  int
-	called chan<- struct{}
+	mu    sync.Mutex
+	raw   RawRanges
+	err   error
+	calls int
 }
 
 func (f *stubFetcher) Fetch(ctx context.Context) (RawRanges, error) {
 	f.mu.Lock()
 	f.calls++
 	raw, err := f.raw, f.err
-	called := f.called
 	f.mu.Unlock()
-	if called != nil {
-		select {
-		case called <- struct{}{}:
-		default:
-		}
-	}
 	select {
 	case <-ctx.Done():
 		return RawRanges{}, ctx.Err()

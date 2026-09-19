@@ -1,0 +1,36 @@
+# Git、IDE 与本地工作状态
+.git/
+.github/
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*.tmp
+.slim/
+
+# Caddy 运行时数据与本地配置
+/data/
+/config/
+/caddy-data/
+/caddy-config/
+/Caddyfile
+
+# 环境文件与密钥材料
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# 本地生成的二进制与构建产物
+/caddy
+/bin/
+/dist/
+*.test
+*.out
+*.coverprofile

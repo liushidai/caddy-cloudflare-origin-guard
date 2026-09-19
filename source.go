@@ -19,12 +19,9 @@ type IPRangeSource struct {
 }
 
 type cachedRanges struct {
-	snapshot *cloudflareRangeSet
+	snapshot *cloudflare.RangeSet
 	prefixes []netip.Prefix
 }
-
-// cloudflareRangeSet is kept as an alias to make the cache record concise.
-type cloudflareRangeSet = cloudflare.RangeSet
 
 func init() {
 	caddy.RegisterModule(&IPRangeSource{})

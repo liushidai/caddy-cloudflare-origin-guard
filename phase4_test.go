@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
@@ -19,14 +20,6 @@ import (
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/liushidai/caddy-cloudflare-origin-guard/cloudflare"
 )
-
-type fakeCache struct{}
-
-func (fakeCache) Load(context.Context) (cloudflare.CachedRanges, error) {
-	return cloudflare.CachedRanges{}, cloudflare.ErrCacheMiss
-}
-
-func (fakeCache) Save(context.Context, cloudflare.CachedRanges) error { return nil }
 
 type fakeUpdater struct {
 	store    *cloudflare.SnapshotStore
@@ -59,21 +52,14 @@ func (u *fakeUpdater) Run(ctx context.Context) error {
 	return nil
 }
 
-type fakeFetcher struct{}
-
-func (fakeFetcher) Fetch(context.Context) (cloudflare.RawRanges, error) {
-	return cloudflare.RawRanges{}, errors.New("测试 Fetcher 不应被调用")
-}
-
-func testApp(updater *fakeUpdater) *App {
+func testApp(t *testing.T, updater *fakeUpdater) *App {
+	t.Helper()
 	return &App{
-		newFetcher: func(time.Duration) (cloudflare.Fetcher, error) { return fakeFetcher{}, nil },
-		newCache:   func(string) (cloudflare.RangeCache, error) { return fakeCache{}, nil },
 		newUpdater: func(_ cloudflare.Fetcher, _ cloudflare.RangeCache, store *cloudflare.SnapshotStore, _ cloudflare.UpdaterConfig, _ *slog.Logger) (updaterRunner, error) {
 			updater.store = store
 			return updater, nil
 		},
-		cachePath: func() string { return "/tmp/cloudflare-origin-test/lkg.json" },
+		cachePath: func() string { return filepath.Join(t.TempDir(), "lkg.json") },
 	}
 }
 
@@ -94,7 +80,7 @@ func TestModuleRegistrationAndInterfaceGuards(t *testing.T) {
 func TestAppProvisionStartStopAndSharedStore(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		updater := &fakeUpdater{initDone: make(chan struct{})}
-		app := testApp(updater)
+		app := testApp(t, updater)
 		if err := app.Provision(caddy.Context{}); err != nil {
 			t.Fatal(err)
 		}
@@ -135,12 +121,10 @@ func TestAppFailedProvisionAndNilSafeCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 	app := &App{
-		newFetcher: func(time.Duration) (cloudflare.Fetcher, error) { return fakeFetcher{}, nil },
-		newCache:   func(string) (cloudflare.RangeCache, error) { return fakeCache{}, nil },
 		newUpdater: func(_ cloudflare.Fetcher, _ cloudflare.RangeCache, store *cloudflare.SnapshotStore, _ cloudflare.UpdaterConfig, _ *slog.Logger) (updaterRunner, error) {
 			return &fakeUpdater{store: store, initErr: errors.New("无网络且无缓存")}, nil
 		},
-		cachePath: func() string { return "/tmp/cloudflare-origin-test/lkg.json" },
+		cachePath: func() string { return filepath.Join(t.TempDir(), "lkg.json") },
 	}
 	if err := app.Provision(caddy.Context{}); err == nil {
 		t.Fatal("无网络且无有效缓存时 Provision 意外成功")

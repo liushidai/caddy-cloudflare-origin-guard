@@ -41,8 +41,6 @@ type App struct {
 	done    chan struct{}
 	started bool
 
-	newFetcher func(time.Duration) (cloudflare.Fetcher, error)
-	newCache   func(string) (cloudflare.RangeCache, error)
 	newUpdater func(cloudflare.Fetcher, cloudflare.RangeCache, *cloudflare.SnapshotStore, cloudflare.UpdaterConfig, *slog.Logger) (updaterRunner, error)
 	cachePath  func() string
 }
@@ -79,18 +77,6 @@ func (a *App) Provision(ctx caddy.Context) error {
 		coreConfig.MaxStale = time.Duration(a.MaxStale)
 	}
 
-	newFetcher := a.newFetcher
-	if newFetcher == nil {
-		newFetcher = func(timeout time.Duration) (cloudflare.Fetcher, error) {
-			return cloudflare.NewHTTPFetcherWithTimeout(timeout)
-		}
-	}
-	newCache := a.newCache
-	if newCache == nil {
-		newCache = func(path string) (cloudflare.RangeCache, error) {
-			return cloudflare.NewFileCache(path)
-		}
-	}
 	newUpdater := a.newUpdater
 	if newUpdater == nil {
 		newUpdater = func(fetcher cloudflare.Fetcher, cache cloudflare.RangeCache, store *cloudflare.SnapshotStore, config cloudflare.UpdaterConfig, log *slog.Logger) (updaterRunner, error) {
@@ -104,11 +90,11 @@ func (a *App) Provision(ctx caddy.Context) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		logger.Warn("创建缓存目录失败，将继续使用网络快照", "path", filepath.Dir(path), "error", err)
 	}
-	fetcher, err := newFetcher(coreConfig.Timeout)
+	fetcher, err := cloudflare.NewHTTPFetcherWithTimeout(coreConfig.Timeout)
 	if err != nil {
 		return fmt.Errorf("创建 Cloudflare Fetcher: %w", err)
 	}
-	cache, err := newCache(path)
+	cache, err := cloudflare.NewFileCache(path)
 	if err != nil {
 		return fmt.Errorf("创建 Cloudflare 缓存: %w", err)
 	}

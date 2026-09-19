@@ -1,0 +1,20 @@
+{
+	cloudflare_origin {
+		refresh_interval 1h
+		timeout 10s
+		max_stale 720h
+	}
+
+	servers {
+		trusted_proxies cloudflare
+		trusted_proxies_strict
+		client_ip_headers CF-Connecting-IP
+	}
+}
+
+protected.example.test {
+	@not_cloudflare not cloudflare_origin
+	respond @not_cloudflare "Forbidden" 403
+
+	respond "Replace this placeholder with the protected upstream." 200
+}
