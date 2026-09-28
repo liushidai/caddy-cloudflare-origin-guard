@@ -1,5 +1,7 @@
 # caddy-cloudflare-origin-guard
 
+[English](README.en.md) | 简体中文
+
 一个面向 Caddy v2 的 Cloudflare 源站访问防护插件。它定期读取 Cloudflare 官方公布的 IPv4/IPv6 CDN 网段，在 Caddy 中同时提供：
 
 - 当前 Caddy 应用模块：`cloudflare_origin`；
