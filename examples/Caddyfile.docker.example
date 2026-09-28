@@ -1,4 +1,6 @@
 {
+	auto_https disable_redirects
+
 	cloudflare_origin {
 		refresh_interval 1h
 		timeout 10s
@@ -12,9 +14,29 @@
 	}
 }
 
-protected.example.test {
-	@not_cloudflare not cloudflare_origin
-	respond @not_cloudflare "Forbidden" 403
+http://protected.example.test {
+	log {
+		output stdout
+		format json
+	}
 
-	respond "Replace this placeholder with the protected upstream." 200
+	route {
+		@not_cloudflare not cloudflare_origin
+		respond @not_cloudflare "Forbidden" 403
+		redir https://protected.example.test{uri} 308
+	}
+}
+
+https://protected.example.test {
+	log {
+		output stdout
+		format json
+	}
+
+	route {
+		@not_cloudflare not cloudflare_origin
+		respond @not_cloudflare "Forbidden" 403
+		# 将下一行替换为 reverse_proxy photo:8080（两者须位于同一 Compose 网络）。
+		respond "受保护站点占位响应" 200
+	}
 }
